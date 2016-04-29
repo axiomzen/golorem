@@ -140,6 +140,13 @@ func Url() string {
 	return base
 }
 
+func ReadableUrl(sentence string) string {
+	url := strings.Replace(sentence, " ", "-", -1)
+	url = strings.Replace(url, ".", "", -1)
+	url = strings.Replace(url, ",", "", -1)
+	return url
+}
+
 // Host
 func Host() string {
 	n := intRange(0, 3)
