@@ -44,12 +44,13 @@ func genWordLen() int {
 	return 2 // shouldn't get here
 }
 
-func intRange(min, max int) int {
+// IntRange returns a random int between min (inclusive) and max (exclusive)
+func IntRange(min, max int) int {
 	if min == max {
-		return intRange(min, min+1)
+		return IntRange(min, min+1)
 	}
 	if min > max {
-		return intRange(max, min)
+		return IntRange(max, min)
 	}
 	n := rand.Int() % (max - min)
 	return n + min
@@ -78,13 +79,13 @@ func word(wordLen int) string {
 
 // Generate a word in a specfied range of letters.
 func Word(min, max int) string {
-	n := intRange(min, max)
+	n := IntRange(min, max)
 	return word(n)
 }
 
 // Generate a sentence with a specified range of words.
 func Sentence(min, max int) string {
-	n := intRange(min, max)
+	n := IntRange(min, max)
 
 	// grab some words
 	ws := []string{}
@@ -114,7 +115,7 @@ const (
 )
 
 func Paragraph(min, max int) string {
-	n := intRange(min, max)
+	n := IntRange(min, max)
 
 	p := []string{}
 	for i := 0; i < n; i++ {
@@ -149,7 +150,7 @@ func ReadableUrl(sentence string) string {
 
 // Host
 func Host() string {
-	n := intRange(0, 3)
+	n := IntRange(0, 3)
 	tld := ""
 	switch n {
 	case 0:
