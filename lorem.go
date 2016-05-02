@@ -126,7 +126,7 @@ func Paragraph(min, max int) string {
 
 // Generate a random URL
 func Url() string {
-	n := intRange(0, 3)
+	n := IntRange(0, 3)
 
 	base := `http://www.` + Host()
 
