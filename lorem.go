@@ -74,10 +74,9 @@ func word(wordLen int) string {
 		}
 		n++
 	}
-	return ""
 }
 
-// Generate a word in a specfied range of letters.
+// Word Generates a word in a specfied range of letters.
 func Word(min, max int) string {
 	n := IntRange(min, max)
 	return word(n)
@@ -113,7 +112,7 @@ func HerokuDBName(src rand.Source) string {
 	return randStringBytesMaskImprSrc(14, letterBytes, src)
 }
 
-// Generate a sentence with a specified range of words.
+// Sentence Generate a sentence with a specified range of words.
 func Sentence(min, max int) string {
 	n := IntRange(min, max)
 
@@ -128,7 +127,7 @@ func Sentence(min, max int) string {
 		// the current word is not the last or first
 		if (rand.Int()%n == 0) && numcomma < maxcommas && i < n-1 && i > 2 {
 			ws[i-1] += ","
-			numcomma += 1
+			numcomma++
 		}
 
 	}
@@ -138,12 +137,12 @@ func Sentence(min, max int) string {
 	return sentence
 }
 
-// Generate a paragraph with a specified range of sentenences.
 const (
 	minwords = 5
 	maxwords = 22
 )
 
+// Paragraph Generates a paragraph with a specified range of sentenences.
 func Paragraph(min, max int) string {
 	n := IntRange(min, max)
 
@@ -154,8 +153,8 @@ func Paragraph(min, max int) string {
 	return strings.Join(p, " ")
 }
 
-// Generate a random URL
-func Url() string {
+// URL Generates a random URL
+func URL() string {
 	n := IntRange(0, 3)
 
 	base := `http://www.` + Host()
@@ -171,14 +170,16 @@ func Url() string {
 	return base
 }
 
-func ReadableUrl(sentence string) string {
+// ReadablePath converts all spaces to -, and removes . and ,
+// TODO: we should probably encode the rest?
+func ReadablePath(sentence string) string {
 	url := strings.Replace(sentence, " ", "-", -1)
 	url = strings.Replace(url, ".", "", -1)
 	url = strings.Replace(url, ",", "", -1)
 	return url
 }
 
-// Host
+// Host generates a random host string (dfdfd.com) for example
 func Host() string {
 	n := IntRange(0, 3)
 	tld := ""
@@ -195,7 +196,7 @@ func Host() string {
 	return strings.Join(parts, ``)
 }
 
-// Email
+// Email generates a random email (dfdf@Host())
 func Email() string {
 	return Word(4, 10) + `@` + Host()
 }

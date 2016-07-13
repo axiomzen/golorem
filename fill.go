@@ -2,6 +2,7 @@ package lorem
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
@@ -9,7 +10,8 @@ import (
 	"strings"
 )
 
-var ErrInvalidSpecification = errors.New("must provide a struct pointer")
+//
+var errInvalidSpecification = errors.New("must provide a struct pointer")
 
 // A ParseError occurs when an environment variable cannot be converted to
 // the type required by a struct field during assignment.
@@ -20,21 +22,27 @@ type ParseError struct {
 	Tag       string
 }
 
+func (e *ParseError) Error() string {
+	return fmt.Sprintf("envconfig.Process: error %s for fieldname %s: has type %s and tag %s", e.Message, e.FieldName, e.TypeName, e.Tag)
+}
+
 // A Decoder is a type that knows how to de-serialize environment variables
 // into itself.
-type LoremDecoder interface {
+type Decoder interface {
 	LoremDecode(tag string) error
 }
 
-func Fill(spec interface{}) error {
+// Loremize will fill in the structure with random stuff
+// using lorme ipsum for strings
+func Loremize(spec interface{}) error {
 	// must be a struct pointer
 	s := reflect.ValueOf(spec)
 	if s.Kind() != reflect.Ptr {
-		return ErrInvalidSpecification
+		return errInvalidSpecification
 	}
 	s = s.Elem()
 	if s.Kind() != reflect.Struct {
-		return ErrInvalidSpecification
+		return errInvalidSpecification
 	}
 	typeOfSpec := s.Type()
 	for i := 0; i < s.NumField(); i++ {
@@ -49,7 +57,7 @@ func Fill(spec interface{}) error {
 		// ignored anonymous structs already covered, see here: https://play.golang.org/p/2FWYoLzWCV
 		if typeOfSpec.Field(i).Anonymous && f.Kind() == reflect.Struct {
 			embeddedPtr := f.Addr().Interface()
-			if err := Fill(embeddedPtr); err != nil {
+			if err := Loremize(embeddedPtr); err != nil {
 				return err
 			}
 			// populate the field itself
@@ -74,7 +82,7 @@ func processField(tag string, field reflect.Value) error {
 
 	decoder := decoderFrom(field)
 	if decoder != nil {
-		return decoder.LoremDecoder(tag)
+		return decoder.LoremDecode(tag)
 	}
 
 	// handle pointers
@@ -97,9 +105,9 @@ func processField(tag string, field reflect.Value) error {
 				// just fill in nextone
 				if len(args) > 1 {
 					field.SetString(args[1])
-				} else {
-					return errors.New("must have another thing after comma")
+					return nil
 				}
+				return errors.New("must have another thing after comma")
 			}
 
 			var min = int64(2)
@@ -119,15 +127,15 @@ func processField(tag string, field reflect.Value) error {
 
 			switch args[0] {
 			case "word":
-				field.SetString(Word(min, max))
+				field.SetString(Word(int(min), int(max)))
 			case "sentence":
-				field.SetString(Sentence(min, max))
+				field.SetString(Sentence(int(min), int(max)))
 			case "paragraph":
-				field.SetString(Paragraph(min, max))
+				field.SetString(Paragraph(int(min), int(max)))
 			case "url":
-				field.SetString(Url())
-			case "readableurl":
-				field.SetString(ReadableUrl(Sentence(min, max)))
+				field.SetString(URL())
+			case "readablepath":
+				field.SetString(ReadablePath(Sentence(int(min), int(max))))
 			case "host":
 				field.SetString(Host())
 			case "email":
@@ -135,31 +143,30 @@ func processField(tag string, field reflect.Value) error {
 			}
 		}
 	case reflect.Int, reflect.Int64:
-		field.SetInt(rand.Int())
+		field.SetInt(int64(rand.Int()))
 	case reflect.Int32:
-		field.SetInt(rand.Int31())
+		field.SetInt(int64(rand.Int31()))
 	case reflect.Int8:
-		field.SetInt(IntRange(0, math.MaxInt8))
+		field.SetInt(int64(IntRange(0, math.MaxInt8)))
 	case reflect.Int16:
-		field.SetInt(IntRange(0, math.MaxInt16))
+		field.SetInt(int64(IntRange(0, math.MaxInt16)))
 	case reflect.Uint, reflect.Uint64, reflect.Uint32:
-		field.SetUint(rand.Uint32())
+		field.SetUint(uint64(rand.Uint32()))
 	case reflect.Uint8:
-		field.SetUint(IntRange(0, math.MaxUInt8))
+		field.SetUint(uint64(IntRange(0, math.MaxUint8)))
 	case reflect.Uint16:
-		field.SetUint(IntRange(0, math.MaxUInt16))
+		field.SetUint(uint64(IntRange(0, math.MaxUint16)))
 	case reflect.Bool:
 		field.SetBool(rand.Int()%2 == 0)
 	case reflect.Float32:
-		field.SetFloat(rand.Float32())
+		field.SetFloat(float64(rand.Float32()))
 	case reflect.Float64:
 		field.SetFloat(rand.Float64())
 	case reflect.Slice:
-		//vals := strings.Split(value, ",")
 		// make a random slice length?
 		size := IntRange(0, 10)
 		sl := reflect.MakeSlice(typ, size, size)
-		for i, _ := range sl {
+		for i := 0; i < size; i++ {
 			err := processField(tag, sl.Index(i))
 			if err != nil {
 				return err
@@ -171,9 +178,9 @@ func processField(tag string, field reflect.Value) error {
 	return nil
 }
 
-func decoderFrom(field reflect.Value) LoremDecoder {
+func decoderFrom(field reflect.Value) Decoder {
 	if field.CanInterface() {
-		dec, ok := field.Interface().(LoremDecoder)
+		dec, ok := field.Interface().(Decoder)
 		if ok {
 			return dec
 		}
@@ -183,7 +190,7 @@ func decoderFrom(field reflect.Value) LoremDecoder {
 	// and we can get a pointer to our field
 	if field.CanAddr() {
 		field = field.Addr()
-		dec, ok := field.Interface().(LoremDecoder)
+		dec, ok := field.Interface().(Decoder)
 		if ok {
 			return dec
 		}
