@@ -55,3 +55,5 @@ For non strings, a random number will be used.
 Maps are currently unsupported, but could easily be added.
 
 Custom decoding is supported, but untested at the moment.
+
+To test just fill, type `go test fill_test.go fill.go lorem.go wordlist.go`
