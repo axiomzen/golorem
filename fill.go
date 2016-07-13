@@ -33,7 +33,7 @@ type Decoder interface {
 }
 
 // this will handle everything
-func loremizeRec(loremTag string, field reflect.Value) error {
+func fillRec(loremTag string, field reflect.Value) error {
 
 	if !field.CanSet() || loremTag == "-" {
 		// ignore this field
@@ -57,25 +57,25 @@ func loremizeRec(loremTag string, field reflect.Value) error {
 
 	switch field.Kind() {
 	case reflect.Struct:
-		// call loremizeRec on each field
+		// call fillRec on each field
 		typeOfField := field.Type()
 		//if
 		//todo: field.Anonymous
 		for i := 0; i < field.NumField(); i++ {
 			subField := field.Field(i)
-			err := loremizeRec(typeOfField.Field(i).Tag.Get("lorem"), subField)
+			err := fillRec(typeOfField.Field(i).Tag.Get("lorem"), subField)
 			if err != nil {
 				return err
 			}
 		}
 	case reflect.Slice:
-		// init slice, call loremizeRec on each slice entry
+		// init slice, call fillRec on each slice entry
 		size := IntRange(1, 10)
 		sl := reflect.MakeSlice(typ, size, size)
 		for i := 0; i < size; i++ {
 			//err := processField(tag, sl.Index(i))
 			sliceIndex := sl.Index(i)
-			err := loremizeRec(loremTag, sliceIndex)
+			err := fillRec(loremTag, sliceIndex)
 			if err != nil {
 				return err
 			}
@@ -91,9 +91,9 @@ func loremizeRec(loremTag string, field reflect.Value) error {
 	return nil
 }
 
-// Loremize will fill in the structure with random stuff
+// Fill will fill in the structure with random stuff
 // using lorme ipsum for strings
-func Loremize(spec interface{}) error {
+func Fill(spec interface{}) error {
 	// must be a struct pointer
 	value := reflect.ValueOf(spec)
 	if value.Kind() != reflect.Ptr {
@@ -107,7 +107,7 @@ func Loremize(spec interface{}) error {
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Field(i)
 		loremTag := typeOfValue.Field(i).Tag.Get("lorem")
-		err := loremizeRec(loremTag, field)
+		err := fillRec(loremTag, field)
 		if err != nil {
 			return &ParseError{
 				Message:   err.Error(),

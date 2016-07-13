@@ -38,7 +38,7 @@ type SimpleStruct struct {
 func TestSimpleStruct(t *testing.T) {
 	var ss SimpleStruct
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -123,7 +123,7 @@ type StructWithPointers struct {
 func TestStructWithPointers(t *testing.T) {
 	var ss StructWithPointers
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -231,7 +231,7 @@ type StructWithSlices struct {
 func TestStructWithSlices(t *testing.T) {
 	var ss StructWithSlices
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -254,7 +254,7 @@ type StructWithSlicesOfPointers struct {
 func TestStructWithSlicesOfPointers(t *testing.T) {
 	var ss StructWithSlicesOfPointers
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -289,7 +289,7 @@ type StructWithMap struct {
 func TestStructWithMap(t *testing.T) {
 	var ss StructWithMap
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -310,7 +310,7 @@ type StructWithStruct struct {
 func TestStructWithStruct(t *testing.T) {
 	var ss StructWithStruct
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -353,7 +353,7 @@ type StructWithEmbeddedStruct struct {
 func TestStructWithEmbeddedStruct(t *testing.T) {
 	var ss StructWithEmbeddedStruct
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -384,7 +384,7 @@ type StructWithEmbeddedStructPointer struct {
 func TestStructWithEmbeddedStructPointer(t *testing.T) {
 	var ss StructWithEmbeddedStructPointer
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -414,7 +414,7 @@ type StructWithSliceOfStructs struct {
 func TestStructWithSliceOfStructs(t *testing.T) {
 	var ss StructWithSliceOfStructs
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -483,7 +483,7 @@ type StructWithIgnoredFields struct {
 func TestStructWithIgnoredFields(t *testing.T) {
 	var ss StructWithIgnoredFields
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -548,7 +548,7 @@ type StructWithIgnoredEmbeddedStruct struct {
 func TestStructWithIgnoredEmbeddedStructs(t *testing.T) {
 	var ss StructWithIgnoredEmbeddedStruct
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
@@ -573,7 +573,7 @@ type StructWithIgnoredEmbeddedStructPointer struct {
 func TestStructWithIgnoredEmbeddedStructPointers(t *testing.T) {
 	var ss StructWithIgnoredEmbeddedStructPointer
 
-	if err := Loremize(&ss); err != nil {
+	if err := Fill(&ss); err != nil {
 		t.Error(err.Error())
 	}
 
