@@ -52,8 +52,8 @@ func TestSimpleStruct(t *testing.T) {
 		t.Errorf("Word: expected string not empty, got %s", ss.Word)
 	}
 
-	if len(ss.WordWithRange) < 2 || len(ss.WordWithRange) > 11 {
-		t.Errorf("WordWithRange: expected 2 < len(len(ss.WordWithRange)) < 12, got %d", len(ss.WordWithRange))
+	if len(ss.WordWithRange) < 10 || len(ss.WordWithRange) > 11 {
+		t.Errorf("WordWithRange: expected 9 < len(len(ss.WordWithRange)) < 12, got %d", len(ss.WordWithRange))
 	}
 
 	if ss.Sentence == "" {
@@ -88,7 +88,7 @@ func TestSimpleStruct(t *testing.T) {
 	}
 
 	if !strings.Contains(ss.Email, ".") || !strings.Contains(ss.Email, "@") {
-		t.Errorf("Host: expected Email to contain '.' and '@', got %s", ss.Email)
+		t.Errorf("Email: expected Email to contain '.' and '@', got %s", ss.Email)
 	}
 
 }
@@ -234,6 +234,16 @@ func TestStructWithSlices(t *testing.T) {
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
 	}
+
+	if ss.Words == nil {
+		t.Errorf("Words: expected Words not be nil")
+	}
+
+	if len(ss.Words) > 0 {
+		if len(ss.Words[0]) == 0 {
+			t.Errorf("Words: expected words[0] to be longer than 0")
+		}
+	}
 }
 
 type StructWithSlicesOfPointers struct {
@@ -247,12 +257,31 @@ func TestStructWithSlicesOfPointers(t *testing.T) {
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
 	}
+
+	if ss.Sentences == nil {
+		t.Errorf("Sentences: expected Sentences not be nil")
+	}
+
+	for _, sp := range ss.Sentences {
+		if sp == nil {
+			t.Errorf("Sentences: expected sp not be nil")
+		}
+
+		if len(*sp) == 0 {
+			t.Errorf("Sentences: expected *sp to be longer than 0")
+		}
+
+		numspaces := strings.Count(*sp, " ")
+		if numspaces < 9 || numspaces > 10 {
+			t.Errorf("Sentences: expected 8 < strings.Count(*ss.Sentences[i], \".\") < 11, got %d", numspaces)
+		}
+	}
 }
 
 // try a map
 type StructWithMap struct {
 
-	// should ignore it?
+	// we don't do maps at this time
 	Map        map[string]string
 	MapWithTag map[string]string `lorem:"word"`
 }
@@ -262,6 +291,14 @@ func TestStructWithMap(t *testing.T) {
 
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
+	}
+
+	if ss.Map != nil {
+		t.Errorf("Map: expected %v to be nil", ss.Map)
+	}
+
+	if ss.MapWithTag != nil {
+		t.Errorf("MapWithTag: expected %v to be nil", ss.MapWithTag)
 	}
 }
 
@@ -276,6 +313,36 @@ func TestStructWithStruct(t *testing.T) {
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
 	}
+
+	length := len(ss.OtherStruct.SubWordWithRange)
+	if length < 10 || length > 11 {
+		t.Errorf("SubWordWithRange: expected 9 < len(ss.OtherStruct.SubWordWithRange) < 12, got %d", length)
+	}
+
+	if ss.OtherStruct.SubEmailPointer == nil {
+		t.Error("SubEmailPointer: expected it to not be nil")
+	}
+
+	if !strings.Contains(*ss.OtherStruct.SubEmailPointer, ".") || !strings.Contains(*ss.OtherStruct.SubEmailPointer, "@") {
+		t.Errorf("OtherStruct: expected SubEmailPointer to contain '.' and '@', got %s", *ss.OtherStruct.SubEmailPointer)
+	}
+
+	if ss.OtherStructPointer == nil {
+		t.Errorf("OtherStructPointer: expected OtherStruct to not be nil")
+	}
+
+	length = len(ss.OtherStructPointer.SubWordWithRange)
+	if length < 10 || length > 11 {
+		t.Errorf("SubWordWithRange: expected 9 < len(ss.OtherStructPointer.SubWordWithRange) < 12, got %d", length)
+	}
+
+	if ss.OtherStructPointer.SubEmailPointer == nil {
+		t.Error("SubEmailPointer: expected it to not be nil")
+	}
+
+	if !strings.Contains(*ss.OtherStructPointer.SubEmailPointer, ".") || !strings.Contains(*ss.OtherStructPointer.SubEmailPointer, "@") {
+		t.Errorf("OtherStruct: expected SubEmailPointer to contain '.' and '@', got %s", *ss.OtherStructPointer.SubEmailPointer)
+	}
 }
 
 type StructWithEmbeddedStruct struct {
@@ -289,6 +356,24 @@ func TestStructWithEmbeddedStruct(t *testing.T) {
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
 	}
+
+	length := len(ss.SubWordWithRange)
+	if length < 10 || length > 11 {
+		t.Errorf("SubWordWithRange: expected 9 < len(ss.SubWordWithRange) < 12, got %d", length)
+	}
+
+	if ss.SubEmailPointer == nil {
+		t.Error("SubEmailPointer: expected it to not be nil")
+	}
+
+	if !strings.Contains(*ss.SubEmailPointer, ".") || !strings.Contains(*ss.SubEmailPointer, "@") {
+		t.Errorf("OtherStruct: expected SubEmailPointer to contain '.' and '@', got %s", *ss.SubEmailPointer)
+	}
+
+	if !strings.HasPrefix(*ss.URLPointer, "http://www.") {
+		t.Errorf("URLPointer: expected url to start with http://www., got %s", *ss.URLPointer)
+	}
+
 }
 
 type StructWithEmbeddedStructPointer struct {
@@ -301,6 +386,23 @@ func TestStructWithEmbeddedStructPointer(t *testing.T) {
 
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
+	}
+
+	length := len(ss.SubWordWithRange)
+	if length < 10 || length > 11 {
+		t.Errorf("SubWordWithRange: expected 9 < len(ss.SubWordWithRange) < 12, got %d", length)
+	}
+
+	if ss.SubEmailPointer == nil {
+		t.Error("SubEmailPointer: expected it to not be nil")
+	}
+
+	if !strings.Contains(*ss.SubEmailPointer, ".") || !strings.Contains(*ss.SubEmailPointer, "@") {
+		t.Errorf("OtherStruct: expected SubEmailPointer to contain '.' and '@', got %s", *ss.SubEmailPointer)
+	}
+
+	if ss.Word == "" {
+		t.Errorf("Word: expected string not empty, got %s", ss.Word)
 	}
 }
 
@@ -315,6 +417,49 @@ func TestStructWithSliceOfStructs(t *testing.T) {
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
 	}
+
+	if len(ss.OtherStructs) < 1 {
+		t.Errorf("OtherStructs: expected a non empty slice")
+	}
+
+	for _, b := range ss.OtherStructs {
+		length := len(b.SubWordWithRange)
+		if length < 10 || length > 11 {
+			t.Errorf("SubWordWithRange: expected 9 < len(ss.SubWordWithRange) < 12, got %d", length)
+		}
+
+		if b.SubEmailPointer == nil {
+			t.Error("SubEmailPointer: expected it to not be nil")
+		}
+
+		if !strings.Contains(*b.SubEmailPointer, ".") || !strings.Contains(*b.SubEmailPointer, "@") {
+			t.Errorf("OtherStruct: expected SubEmailPointer to contain '.' and '@', got %s", *b.SubEmailPointer)
+		}
+	}
+
+	if len(ss.OtherStructPointers) < 1 {
+		t.Errorf("OtherStructPointers: expected a non empty slice")
+	}
+
+	for _, b := range ss.OtherStructPointers {
+		if b == nil {
+			t.Errorf("OtherStructPointers: expected the element to not be nil")
+		}
+
+		length := len(b.SubWordWithRange)
+		if length < 10 || length > 11 {
+			t.Errorf("SubWordWithRange: expected 9 < len(ss.SubWordWithRange) < 12, got %d", length)
+		}
+
+		if b.SubEmailPointer == nil {
+			t.Error("SubEmailPointer: expected it to not be nil")
+		}
+
+		if !strings.Contains(*b.SubEmailPointer, ".") || !strings.Contains(*b.SubEmailPointer, "@") {
+			t.Errorf("OtherStruct: expected SubEmailPointer to contain '.' and '@', got %s", *b.SubEmailPointer)
+		}
+	}
+
 }
 
 type StructWithIgnoredFields struct {
@@ -341,11 +486,63 @@ func TestStructWithIgnoredFields(t *testing.T) {
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
 	}
+
+	// use reflection to see if it is the zero value?
+	// bah, for now just use known 0's
+
+	if ss.IgnoredInt != 0 {
+		t.Error("IgnoredInt: Expected to equal zero value")
+	}
+	if ss.IgnoredUInt != 0 {
+		t.Error("IgnoredUInt: Expected to equal zero value")
+	}
+	if ss.IgnoredFloat32 != 0 {
+		t.Error("IgnoredFloat32: Expected to equal zero value")
+	}
+	if ss.IgnoredFloat64 != 0 {
+		t.Error("IgnoredFloat64: Expected to equal zero value")
+	}
+	if ss.IgnoredString != "" {
+		t.Error("IgnoredString: Expected to equal empty string")
+	}
+	if ss.IgnoredBool != false {
+		t.Error("IgnoredBool: Expected to equal false")
+	}
+	if ss.IgnoredIntPointer != nil {
+		t.Error("IgnoredIntPointer: Expected to equal nil")
+	}
+	if ss.IgnoredUIntPointer != nil {
+		t.Error("IgnoredUIntPointer: Expected to equal nil")
+	}
+	if ss.IgnoredStringPointer != nil {
+		t.Error("IgnoredStringPointer: Expected to equal nil")
+	}
+	if ss.IgnoredBoolPointer != nil {
+		t.Error("IgnoredBoolPointer: Expected to equal nil")
+	}
+	if ss.IgnoredStruct.SubEmailPointer != nil {
+		t.Error("IgnoredStruct: Expected to equal nil")
+	}
+	if ss.IgnoredStruct.SubWordWithRange != "" {
+		t.Error("IgnoredStruct: Expected to equal empty string")
+	}
+	if ss.IgnoredStructPointer != nil {
+		t.Error("IgnoredStructPointer: Expected to equal nil")
+	}
+	if ss.IgnoredSlice != nil {
+		t.Error("IgnoredSlice: Expected to equal nil")
+	}
+	if ss.IgnoredSliceOfStructs != nil {
+		t.Error("IgnoredSliceOfStructs: Expected to equal nil")
+	}
+	if ss.IgnoredSliceOfStructPointers != nil {
+		t.Error("IgnoredSliceOfStructPointers: Expected to equal nil")
+	}
 }
 
 type StructWithIgnoredEmbeddedStruct struct {
-	OtherStruct `lorem:"-"`
-	Word        string `lorem:"word,10,11"`
+	OtherStruct   `lorem:"-"`
+	WordWithRange string `lorem:"word,10,11"`
 }
 
 func TestStructWithIgnoredEmbeddedStructs(t *testing.T) {
@@ -353,6 +550,39 @@ func TestStructWithIgnoredEmbeddedStructs(t *testing.T) {
 
 	if err := Loremize(&ss); err != nil {
 		t.Error(err.Error())
+	}
+
+	if ss.SubEmailPointer != nil {
+		t.Error("SubEmailPointer: Expected to equal nil")
+	}
+	if ss.SubWordWithRange != "" {
+		t.Error("SubWordWithRange: Expected to equal empty string")
+	}
+
+	if len(ss.WordWithRange) < 10 || len(ss.WordWithRange) > 11 {
+		t.Errorf("WordWithRange: expected 9 < len(len(ss.WordWithRange)) < 12, got %d", len(ss.WordWithRange))
+	}
+
+}
+
+type StructWithIgnoredEmbeddedStructPointer struct {
+	*OtherStruct         `lorem:"-"`
+	WordWithRangePointer *string `lorem:"word,10,11"`
+}
+
+func TestStructWithIgnoredEmbeddedStructPointers(t *testing.T) {
+	var ss StructWithIgnoredEmbeddedStructPointer
+
+	if err := Loremize(&ss); err != nil {
+		t.Error(err.Error())
+	}
+
+	if ss.OtherStruct != nil {
+		t.Error("OtherStruct: expected it to be nil")
+	}
+
+	if len(*ss.WordWithRangePointer) < 10 || len(*ss.WordWithRangePointer) > 11 {
+		t.Errorf("WordWithRangePointer: expected 9 < len(ss.WordWithRangePointer) < 12, got %d", len(*ss.WordWithRangePointer))
 	}
 }
 

@@ -32,47 +32,162 @@ type Decoder interface {
 	LoremDecode(tag string) error
 }
 
+// this will handle everything
+func loremizeRec(loremTag string, field reflect.Value) error {
+
+	if !field.CanSet() || loremTag == "-" {
+		// ignore this field
+		return nil
+	}
+	// check for decoder
+	decoder := decoderFrom(field)
+	if decoder != nil {
+		return decoder.LoremDecode(loremTag)
+	}
+
+	// check for pointer first
+	typ := field.Type()
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+		if field.IsNil() {
+			field.Set(reflect.New(typ))
+		}
+		field = field.Elem()
+	}
+
+	switch field.Kind() {
+	case reflect.Struct:
+		// call loremizeRec on each field
+		typeOfField := field.Type()
+		//if
+		//todo: field.Anonymous
+		for i := 0; i < field.NumField(); i++ {
+			subField := field.Field(i)
+			err := loremizeRec(typeOfField.Field(i).Tag.Get("lorem"), subField)
+			if err != nil {
+				return err
+			}
+		}
+	case reflect.Slice:
+		// init slice, call loremizeRec on each slice entry
+		size := IntRange(1, 10)
+		sl := reflect.MakeSlice(typ, size, size)
+		for i := 0; i < size; i++ {
+			//err := processField(tag, sl.Index(i))
+			sliceIndex := sl.Index(i)
+			err := loremizeRec(loremTag, sliceIndex)
+			if err != nil {
+				return err
+			}
+		}
+		field.Set(sl)
+	default:
+		// handle simple type
+		err := processField(loremTag, field)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Loremize will fill in the structure with random stuff
 // using lorme ipsum for strings
 func Loremize(spec interface{}) error {
 	// must be a struct pointer
-	s := reflect.ValueOf(spec)
-	if s.Kind() != reflect.Ptr {
+	value := reflect.ValueOf(spec)
+	if value.Kind() != reflect.Ptr {
 		return errInvalidSpecification
 	}
-	s = s.Elem()
-	if s.Kind() != reflect.Struct {
+	value = value.Elem()
+	if value.Kind() != reflect.Struct {
 		return errInvalidSpecification
 	}
-	typeOfSpec := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		// check for our tags
-		loremTag := typeOfSpec.Field(i).Tag.Get("lorem")
-		if !f.CanSet() || loremTag == "-" {
-			// ignore this field
-			continue
-		}
-		// check for embedded anonymous structs
-		// ignored anonymous structs already covered, see here: https://play.golang.org/p/2FWYoLzWCV
-		if typeOfSpec.Field(i).Anonymous && f.Kind() == reflect.Struct {
-			embeddedPtr := f.Addr().Interface()
-			if err := Loremize(embeddedPtr); err != nil {
-				return err
-			}
-			// populate the field itself
-			f.Set(reflect.ValueOf(embeddedPtr).Elem())
-		}
-
-		err := processField(loremTag, f)
+	typeOfValue := value.Type()
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Field(i)
+		loremTag := typeOfValue.Field(i).Tag.Get("lorem")
+		err := loremizeRec(loremTag, field)
 		if err != nil {
 			return &ParseError{
 				Message:   err.Error(),
-				FieldName: typeOfSpec.Field(i).Name,
-				TypeName:  f.Type().String(),
+				FieldName: typeOfValue.Field(i).Name,
+				TypeName:  field.Type().String(),
 				Tag:       loremTag,
 			}
 		}
+
+		// // check for our tags
+		// loremTag := typeOfValue.Field(i).Tag.Get("lorem")
+		// if !field.CanSet() || loremTag == "-" {
+		// 	// ignore this field
+		// 	continue
+		// }
+
+		// typeOfField := field.Type()
+		// if field.Kind() == reflect.Ptr {
+		// 	typeOfField = typeOfField.Elem()
+		// 	if field.IsNil() {
+		// 		field.Set(reflect.New(typeOfField))
+		// 	}
+		// 	field = field.Elem()
+		// }
+		// // check for structs
+		// // ignored anonymous structs already covered, see here: https://play.golang.org/p/2FWYoLzWCV
+		// if field.Kind() == reflect.Struct {
+		// 	//if typeOfSpec.Field(i).Anonymous {
+		// 	embeddedPtr := field.Addr().Interface()
+		// 	if err := Loremize(embeddedPtr); err != nil {
+		// 		return err
+		// 	}
+		// 	// populate the ptr field itself
+		// 	field.Set(reflect.ValueOf(embeddedPtr).Elem())
+		// 	//} else if err := Loremize(f.Addr()); err != nil {
+		// 	//	return err
+		// 	//}
+		// 	continue
+		// } else if field.Kind() == reflect.Slice {
+		// 	// create the slice
+		// 	// iterate over fields
+		// 	// check for pointers
+
+		// 	size := IntRange(1, 10)
+		// 	sl := reflect.MakeSlice(typeOfField, size, size)
+		// 	for i := 0; i < size; i++ {
+		// 		//err := processField(tag, sl.Index(i))
+		// 		sliceIndex := sl.Index(i)
+		// 		// need function that takes anything (including structs)
+		// 		typeOfSliceIndex := sliceIndex.Type()
+		// 		if sliceIndex.Kind() == reflect.Ptr {
+		// 			typeOfSliceIndex = typeOfSliceIndex.Elem()
+		// 			if sliceIndex.IsNil() {
+		// 				sliceIndex.Set(reflect.New(typeOfSliceIndex))
+		// 			}
+		// 			sliceIndex = sliceIndex.Elem()
+		// 		}
+
+		// 	}
+		// 	field.Set(sl)
+		// } else {
+		// 	// handle simple field
+		// }
+
+		// /*
+		// 			  // if a pointer to a struct is passed, get the type of the dereferenced object
+		// 	  if typ.Kind() == reflect.Ptr{
+		// 	    typ = typ.Elem()
+		// 	  }
+		// */
+
+		// err := processField(loremTag, f)
+		// if err != nil {
+		// 	return &ParseError{
+		// 		Message:   err.Error(),
+		// 		FieldName: typeOfSpec.Field(i).Name,
+		// 		TypeName:  f.Type().String(),
+		// 		Tag:       loremTag,
+		// 	}
+		// }
 	}
 	return nil
 }
@@ -162,17 +277,18 @@ func processField(tag string, field reflect.Value) error {
 		field.SetFloat(float64(rand.Float32()))
 	case reflect.Float64:
 		field.SetFloat(rand.Float64())
-	case reflect.Slice:
-		// make a random slice length?
-		size := IntRange(0, 10)
-		sl := reflect.MakeSlice(typ, size, size)
-		for i := 0; i < size; i++ {
-			err := processField(tag, sl.Index(i))
-			if err != nil {
-				return err
-			}
-		}
-		field.Set(sl)
+		// case reflect.Slice:
+		// 	// make a random slice length?
+		// 	size := IntRange(1, 10)
+		// 	sl := reflect.MakeSlice(typ, size, size)
+		// 	for i := 0; i < size; i++ {
+		// 		err := processField(tag, sl.Index(i))
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 	}
+		// 	field.Set(sl)
+	default:
 	}
 
 	return nil
