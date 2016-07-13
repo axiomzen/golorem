@@ -83,6 +83,36 @@ func Word(min, max int) string {
 	return word(n)
 }
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func randStringBytesMaskImprSrc(n int, letters string, src rand.Source) string {
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letters) {
+			b[i] = letters[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
+}
+
+// HerokuDBName generates a random string of lower case letters and numbers
+func HerokuDBName(src rand.Source) string {
+	return randStringBytesMaskImprSrc(14, letterBytes, src)
+}
+
 // Generate a sentence with a specified range of words.
 func Sentence(min, max int) string {
 	n := IntRange(min, max)
