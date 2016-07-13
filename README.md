@@ -50,5 +50,8 @@ lorem.Fill(&ss)
 // structure is filled, do whatever now
 ```
 
-For non strings, a random number will be used
-Custom decoding is supported, but untested at the moment
+For non strings, a random number will be used.
+
+Maps are currently unsupported, but could easily be added.
+
+Custom decoding is supported, but untested at the moment.
