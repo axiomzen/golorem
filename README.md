@@ -4,7 +4,7 @@ Generate lorem ipsum for your project.
 
 Usage
 -----
-import "lorem"
+import "github.com/axiomzen/golorem"
 
 
 Ranged generators
@@ -31,3 +31,24 @@ Generate some commonly occuring tidbits
     Url() string
 
 
+Struct functions
+---------------------
+The `Fill` function allows you to fill a structure with lorem ipsum and other random values.
+
+For example:
+
+```
+type SampleStruct struct {
+	Word               string `lorem:"word"`
+	WordWithRange      string `lorem:"word,10,11"`
+	IgnoreMe 		   string `lorem:"-"`
+}
+
+var ss SampleStruct
+lorem.Fill(&ss)
+
+// structure is filled, do whatever now
+```
+
+For non strings, a random number will be used
+Custom decoding is supported, but untested at the moment
