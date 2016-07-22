@@ -26,10 +26,26 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("envconfig.Process: error %s for fieldname %s: has type %s and tag %s", e.Message, e.FieldName, e.TypeName, e.Tag)
 }
 
-// A Decoder is a type that knows how to de-serialize environment variables
-// into itself.
+// // Loremizer is a type that wants
+// // lorem to generate a value based on the kind returned by
+// // LoremLike, and then passed into LoremFill
+// type Loremizer interface {
+// 	// LoremSimilarTo returns a type that you want generated for you
+// 	// to be passed in to LoremFill
+// 	// if you return reflect.Invalid LoremFill will be called with nil
+// 	// and you have to fill yourself
+// 	LoremSimilarTo() reflect.Kind
+// 	// LoremFill fill youself with the provided value based on
+// 	// the value returned by LoremSimilarTo
+// 	LoremFill(tag string, val interface{}) error
+// }
+
+// Decoder is for types wanting to do their own loremizing
+// we assume clients can do their own random numbers
 type Decoder interface {
-	LoremDecode(tag string) error
+	// LoremDecode will give you an example string
+	// if appropriate given the tag on that field
+	LoremDecode(tag, example string) error
 }
 
 // this will handle everything
@@ -39,10 +55,14 @@ func fillRec(loremTag string, field reflect.Value) error {
 		// ignore this field
 		return nil
 	}
-	// check for decoder
+	// check for Loremizer
 	decoder := decoderFrom(field)
 	if decoder != nil {
-		return decoder.LoremDecode(loremTag)
+		str, err := stringFromTag(loremTag)
+		if err != nil {
+			return err
+		}
+		return decoder.LoremDecode(loremTag, str)
 	}
 
 	// check for pointer first
@@ -58,12 +78,10 @@ func fillRec(loremTag string, field reflect.Value) error {
 	switch field.Kind() {
 	case reflect.Struct:
 		// call fillRec on each field
-		typeOfField := field.Type()
-		//if
 		//todo: field.Anonymous
 		for i := 0; i < field.NumField(); i++ {
 			subField := field.Field(i)
-			err := fillRec(typeOfField.Field(i).Tag.Get("lorem"), subField)
+			err := fillRec(typ.Field(i).Tag.Get("lorem"), subField)
 			if err != nil {
 				return err
 			}
@@ -73,7 +91,6 @@ func fillRec(loremTag string, field reflect.Value) error {
 		size := IntRange(1, 10)
 		sl := reflect.MakeSlice(typ, size, size)
 		for i := 0; i < size; i++ {
-			//err := processField(tag, sl.Index(i))
 			sliceIndex := sl.Index(i)
 			err := fillRec(loremTag, sliceIndex)
 			if err != nil {
@@ -120,13 +137,61 @@ func Fill(spec interface{}) error {
 	return nil
 }
 
+func stringFromTag(tag string) (string, error) {
+	if tag == "" {
+		return Word(2, 10), nil
+	}
+	args := strings.Split(tag, ",")
+	if args[0] == "" {
+		// just fill in nextone
+		if len(args) > 1 {
+			return args[1], nil
+		}
+		return "", errors.New("must have another thing after comma")
+	}
+
+	var min = int64(2)
+	var max = int64(10)
+	if len(args) == 3 {
+		var err error
+		min, err = strconv.ParseInt(args[1], 10, 32)
+		if err != nil {
+			return "", err
+		}
+
+		max, err = strconv.ParseInt(args[2], 10, 32)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	switch args[0] {
+	case "word":
+		return Word(int(min), int(max)), nil
+	case "sentence":
+		return Sentence(int(min), int(max)), nil
+	case "paragraph":
+		return Paragraph(int(min), int(max)), nil
+	case "url":
+		return URL(), nil
+	case "readablepath":
+		return ReadablePath(Sentence(int(min), int(max))), nil
+	case "host":
+		return Host(), nil
+	case "email":
+		return Email(), nil
+	default:
+		return "", nil
+	}
+}
+
 func processField(tag string, field reflect.Value) error {
 	typ := field.Type()
 
-	decoder := decoderFrom(field)
-	if decoder != nil {
-		return decoder.LoremDecode(tag)
-	}
+	// decoder := decoderFrom(field)
+	// if decoder != nil {
+	// 	return decoder.LoremDecode(tag)
+	// }
 
 	// handle pointers
 	if typ.Kind() == reflect.Ptr {
@@ -140,61 +205,69 @@ func processField(tag string, field reflect.Value) error {
 	// no lorem tag specified, use default for everything
 	switch typ.Kind() {
 	case reflect.String:
-		if tag == "" {
-			field.SetString(Word(2, 10))
-		} else {
-			args := strings.Split(tag, ",")
-			if args[0] == "" {
-				// just fill in nextone
-				if len(args) > 1 {
-					field.SetString(args[1])
-					return nil
-				}
-				return errors.New("must have another thing after comma")
-			}
-
-			var min = int64(2)
-			var max = int64(10)
-			if len(args) == 3 {
-				var err error
-				min, err = strconv.ParseInt(args[1], 10, 32)
-				if err != nil {
-					return err
-				}
-
-				max, err = strconv.ParseInt(args[2], 10, 32)
-				if err != nil {
-					return err
-				}
-			}
-
-			switch args[0] {
-			case "word":
-				field.SetString(Word(int(min), int(max)))
-			case "sentence":
-				field.SetString(Sentence(int(min), int(max)))
-			case "paragraph":
-				field.SetString(Paragraph(int(min), int(max)))
-			case "url":
-				field.SetString(URL())
-			case "readablepath":
-				field.SetString(ReadablePath(Sentence(int(min), int(max))))
-			case "host":
-				field.SetString(Host())
-			case "email":
-				field.SetString(Email())
-			}
+		str, err := stringFromTag(tag)
+		if err != nil {
+			return err
 		}
+		field.SetString(str)
+
+		// if tag == "" {
+		// 	field.SetString(Word(2, 10))
+		// } else {
+		// 	args := strings.Split(tag, ",")
+		// 	if args[0] == "" {
+		// 		// just fill in nextone
+		// 		if len(args) > 1 {
+		// 			field.SetString(args[1])
+		// 			return nil
+		// 		}
+		// 		return errors.New("must have another thing after comma")
+		// 	}
+
+		// 	var min = int64(2)
+		// 	var max = int64(10)
+		// 	if len(args) == 3 {
+		// 		var err error
+		// 		min, err = strconv.ParseInt(args[1], 10, 32)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+
+		// 		max, err = strconv.ParseInt(args[2], 10, 32)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 	}
+
+		// 	switch args[0] {
+		// 	case "word":
+		// 		field.SetString(Word(int(min), int(max)))
+		// 	case "sentence":
+		// 		field.SetString(Sentence(int(min), int(max)))
+		// 	case "paragraph":
+		// 		field.SetString(Paragraph(int(min), int(max)))
+		// 	case "url":
+		// 		field.SetString(URL())
+		// 	case "readablepath":
+		// 		field.SetString(ReadablePath(Sentence(int(min), int(max))))
+		// 	case "host":
+		// 		field.SetString(Host())
+		// 	case "email":
+		// 		field.SetString(Email())
+		// 	}
+		// }
 	case reflect.Int, reflect.Int64:
-		field.SetInt(int64(rand.Int()))
+		field.SetInt(int64(rand.Int63()))
 	case reflect.Int32:
 		field.SetInt(int64(rand.Int31()))
 	case reflect.Int8:
 		field.SetInt(int64(IntRange(0, math.MaxInt8)))
 	case reflect.Int16:
 		field.SetInt(int64(IntRange(0, math.MaxInt16)))
-	case reflect.Uint, reflect.Uint64, reflect.Uint32:
+	case reflect.Uint32:
 		field.SetUint(uint64(rand.Uint32()))
+	case reflect.Uint, reflect.Uint64:
+		field.SetUint(uint64(rand.Int63()))
 	case reflect.Uint8:
 		field.SetUint(uint64(IntRange(0, math.MaxUint8)))
 	case reflect.Uint16:
@@ -219,7 +292,7 @@ func decoderFrom(field reflect.Value) Decoder {
 		}
 	}
 
-	// also check if pointer-to-type implements Decoder,
+	// also check if pointer-to-type implements Loremizer,
 	// and we can get a pointer to our field
 	if field.CanAddr() {
 		field = field.Addr()

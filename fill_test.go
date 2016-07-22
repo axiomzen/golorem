@@ -582,3 +582,27 @@ func TestStructWithIgnoredEmbeddedStructPointers(t *testing.T) {
 		t.Errorf("WordWithRangePointer: expected 9 < len(ss.WordWithRangePointer) < 12, got %d", len(*ss.WordWithRangePointer))
 	}
 }
+
+type StructWithFieldThatImplementsDecode struct {
+	Sub SubStructLikeWord `lorem:"word,10,11"`
+}
+
+type SubStructLikeWord struct {
+	word string
+}
+
+func (s *SubStructLikeWord) LoremDecode(tag, example string) error {
+	s.word = example
+	return nil
+}
+
+func TestStructWithStructFieldThatImplementsDecode(t *testing.T) {
+	var ss StructWithFieldThatImplementsDecode
+	if err := Fill(&ss); err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(ss.Sub.word) < 10 || len(ss.Sub.word) > 11 {
+		t.Errorf("Sub.Word: expected 9 < len(ss.Sub.Word) < 12, got %d", len(ss.Sub.word))
+	}
+}
