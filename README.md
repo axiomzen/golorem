@@ -1,3 +1,6 @@
+
+[![Build Status](https://travis-ci.org/axiomzen/golorem.png)](https://travis-ci.org/axiomzen/golorem)
+
 Generate lorem ipsum for your project.
 
 =============
