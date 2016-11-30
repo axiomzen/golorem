@@ -1,5 +1,6 @@
 
-[![Build Status](https://travis-ci.org/axiomzen/golorem.png)](https://travis-ci.org/axiomzen/golorem)
+[![Build Status](https://travis-ci.org/axiomzen/golorem.svg?branch=master)](https://travis-ci.org/axiomzen/golorem)
+[![Coverage Status](https://coveralls.io/repos/github/axiomzen/golorem/badge.svg?branch=master)](https://coveralls.io/github/axiomzen/golorem?branch=master)
 
 Generate lorem ipsum for your project.
 
