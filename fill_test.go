@@ -3,6 +3,8 @@ package lorem
 import (
 	"strings"
 	"testing"
+
+	"github.com/twinj/uuid"
 )
 
 type SimpleStruct struct {
@@ -29,6 +31,7 @@ type SimpleStruct struct {
 	ReadablePath       string `lorem:"readablepath"`
 	Host               string `lorem:"host"`
 	Email              string `lorem:"email"`
+	UUID               string `lorem:"uuid"`
 	Bool               bool
 }
 
@@ -86,6 +89,10 @@ func TestSimpleStruct(t *testing.T) {
 
 	if !strings.Contains(ss.Email, ".") || !strings.Contains(ss.Email, "@") {
 		t.Errorf("Email: expected Email to contain '.' and '@', got %s", ss.Email)
+	}
+
+	if _, err := uuid.Parse(ss.UUID); err != nil {
+		t.Errorf("Email: no error parsing uuid, got %s", err.Error())
 	}
 
 }

@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/twinj/uuid"
 )
 
 //
@@ -180,6 +182,8 @@ func stringFromTag(tag string) (string, error) {
 		return Host(), nil
 	case "email":
 		return Email(), nil
+	case "uuid":
+		return uuid.NewV4().String(), nil
 	default:
 		return "", nil
 	}
