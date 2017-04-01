@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"regexp"
+
 	"github.com/twinj/uuid"
 )
 
@@ -48,6 +50,22 @@ type Decoder interface {
 	// LoremDecode will give you an example string
 	// if appropriate given the tag on that field
 	LoremDecode(tag, example string) error
+}
+
+var sliceSizeRegex = regexp.MustCompile(`^\[(?P<min>\d+),(?P<max>\d+)\](?P<tag>.*)$`)
+
+// returns the min and max size of the slice, the new tag, and an error
+// if there were any
+func extractSliceSize(tag string) (int, int, string, error) {
+
+	if mtchs := sliceSizeRegex.FindStringSubmatch(tag); mtchs != nil {
+		if len(mtchs) > 3 {
+			min, _ := strconv.ParseInt(mtchs[1], 10, 64)
+			max, _ := strconv.ParseInt(mtchs[2], 10, 64)
+			return int(min), int(max), mtchs[3], nil
+		}
+	}
+	return 0, 0, tag, errors.New("didnt match regex")
 }
 
 // this will handle everything
@@ -90,11 +108,18 @@ func fillRec(loremTag string, field reflect.Value) error {
 		}
 	case reflect.Slice:
 		// init slice, call fillRec on each slice entry
-		size := IntRange(1, 10)
+		// see if the tag contains [min,max]
+		min, max, tag, err := extractSliceSize(loremTag)
+		if err != nil {
+			min = 1
+			max = 10
+		}
+
+		size := IntRange(min, max)
 		sl := reflect.MakeSlice(typ, size, size)
 		for i := 0; i < size; i++ {
 			sliceIndex := sl.Index(i)
-			err := fillRec(loremTag, sliceIndex)
+			err := fillRec(tag, sliceIndex)
 			if err != nil {
 				return err
 			}
