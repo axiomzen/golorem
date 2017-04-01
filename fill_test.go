@@ -7,6 +7,31 @@ import (
 	"github.com/twinj/uuid"
 )
 
+func TestSliceRegex(t *testing.T) {
+	if min, max, tag, err := extractSliceSize("[2,4]word,3,4"); err != nil {
+		t.Errorf(err.Error())
+	} else if min != 2 {
+		t.Errorf("Expected %d, got %d", 2, min)
+	} else if max != 4 {
+		t.Errorf("Expected %d, got %d", 4, max)
+	} else if tag != "word,3,4" {
+		t.Errorf("Expected %s, got %s", "word,3,4", tag)
+	}
+
+	// try not there
+	if _, _, tag, err := extractSliceSize("-"); err == nil {
+		t.Errorf("Expected error, got nil")
+	} else if tag != "-" {
+		t.Errorf("Expected %s, got %s", "-", tag)
+	}
+
+	if _, _, tag, err := extractSliceSize("word,3,4"); err == nil {
+		t.Errorf("Expected error, got nil")
+	} else if tag != "word,3,4" {
+		t.Errorf("Expected %s, got %s", "-", tag)
+	}
+}
+
 type SimpleStruct struct {
 	Int8               int8
 	Int16              int16
@@ -246,6 +271,45 @@ func TestStructWithSlices(t *testing.T) {
 	if len(ss.Words) > 0 {
 		if len(ss.Words[0]) == 0 {
 			t.Errorf("Words: expected words[0] to be longer than 0")
+		}
+	}
+}
+
+type StructWithSlicesAndSize struct {
+	// try a slice of things
+	// tag applies to each thing, rather than the slice as a whole
+	Words []string `lorem:"[1,2]word"`
+	UUIDs []string `lorem:"[4,4]uuid"`
+}
+
+func TestStructWithSlicesAndSize(t *testing.T) {
+	var ss StructWithSlicesAndSize
+
+	if err := Fill(&ss); err != nil {
+		t.Error(err.Error())
+	}
+
+	if ss.Words == nil {
+		t.Errorf("Words: expected Words not be nil")
+	}
+
+	if len(ss.Words) != 1 && len(ss.Words) != 2 {
+		t.Errorf("Expected length of slice to equal 1 or 2, got %d", len(ss.Words))
+	}
+	if len(ss.Words[0]) == 0 {
+		t.Errorf("Words: expected words[0] to be longer than 0")
+	}
+
+	if ss.UUIDs == nil {
+		t.Errorf("Words: expected UUIDs not be nil")
+	}
+
+	if len(ss.UUIDs) != 4 {
+		t.Errorf("Expected length of slice to equal 4, got %d", len(ss.UUIDs))
+	}
+	for _, s := range ss.UUIDs {
+		if _, err := uuid.Parse(s); err != nil {
+			t.Errorf(err.Error())
 		}
 	}
 }
