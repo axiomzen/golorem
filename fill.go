@@ -302,14 +302,18 @@ func processField(tag string, field reflect.Value) error {
 	case reflect.Uint16:
 		field.SetUint(uint64(IntRange(0, math.MaxUint16)))
 	case reflect.Bool:
-		field.SetBool(rand.Int()%2 == 0)
+		// see if we can parse the bool
+		if b, err := strconv.ParseBool(tag); err == nil {
+			field.SetBool(b)
+		} else {
+			field.SetBool(rand.Int()%2 == 0)
+		}
 	case reflect.Float32:
 		field.SetFloat(float64(rand.Float32()))
 	case reflect.Float64:
 		field.SetFloat(rand.Float64())
 	default:
 	}
-
 	return nil
 }
 
