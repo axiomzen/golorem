@@ -677,3 +677,24 @@ func TestStructWithStructFieldThatImplementsDecode(t *testing.T) {
 		t.Errorf("Sub.Word: expected 9 < len(ss.Sub.Word) < 12, got %d", len(ss.Sub.word))
 	}
 }
+
+type BoolStr struct {
+	Default bool
+	True    bool `lorem:"true"`
+	False   bool `lorem:"false"`
+	Bad     bool `lorem:"dfdw"`
+}
+
+func TestBoolOverride(t *testing.T) {
+	var bb BoolStr
+	if err := Fill(&bb); err != nil {
+		t.Error(err.Error())
+	}
+
+	if !bb.True {
+		t.Errorf("BoolStr.True: expected %t, got %t", true, bb.True)
+	}
+	if bb.False {
+		t.Errorf("BoolStr.False: expected %t, got %t", false, bb.False)
+	}
+}
